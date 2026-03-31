@@ -1,0 +1,21 @@
+{
+  "name": "OmniNexus — Global Tech Hub",
+  "short_name": "OmniNexus",
+  "description": "Games, AI, Technology, Arduino news. Global tech hub.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080c09",
+  "theme_color": "#00ff88",
+  "orientation": "portrait-primary",
+  "lang": "en",
+  "categories": ["news", "technology", "games"],
+  "icons": [
+    {"src": "/static/icons/icon-192.svg","sizes": "192x192","type": "image/svg+xml","purpose": "any maskable"},
+    {"src": "/static/icons/icon-512.svg","sizes": "512x512","type": "image/svg+xml","purpose": "any maskable"}
+  ],
+  "shortcuts": [
+    {"name": "Gaming","url": "/?cat=gaming","description": "Gaming news"},
+    {"name": "AI News","url": "/?cat=ai","description": "AI news"},
+    {"name": "Arduino","url": "/?cat=arduino","description": "Arduino news"}
+  ]
+}
