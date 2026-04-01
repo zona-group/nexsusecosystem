@@ -1,8 +1,14 @@
+import os
+import logging
+import re
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_babel import Babel
 from config import Config
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 db = SQLAlchemy()
 login_manager = LoginManager()
@@ -11,6 +17,11 @@ babel = Babel()
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+
+    # Log DB URL (password masked) for debugging
+    db_url = app.config.get('SQLALCHEMY_DATABASE_URI', '')
+    masked = re.sub(r'://([^:]+):([^@]+)@', r'://\1:***@', db_url)
+    logger.info(f"[OmniNexus] DB: {masked}")
 
     db.init_app(app)
     login_manager.init_app(app)
@@ -30,7 +41,11 @@ def create_app():
     app.register_blueprint(comments_bp, url_prefix='/comments')
 
     with app.app_context():
-        db.create_all()
+        try:
+            db.create_all()
+            logger.info("[OmniNexus] DB tables OK.")
+        except Exception as e:
+            logger.error(f"[OmniNexus] DB init error: {e}")
 
     return app
 
