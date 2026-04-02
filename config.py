@@ -32,5 +32,17 @@ class Config:
     NEWS_API_KEY = os.environ.get('NEWS_API_KEY', 'YOUR_NEWSAPI_KEY_HERE')
     NEWS_CACHE_MINUTES = 15
     GOOGLE_TRANSLATE_KEY = os.environ.get('GOOGLE_TRANSLATE_KEY', '')
+    GOOGLE_CLIENT_ID     = os.environ.get('GOOGLE_CLIENT_ID', '')
+    GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')
+    MAIL_SERVER   = os.environ.get('MAIL_SERVER',   'smtp.gmail.com')
+    MAIL_PORT     = int(os.environ.get('MAIL_PORT', 587))
+    MAIL_USE_TLS  = os.environ.get('MAIL_USE_TLS',  'true').lower() == 'true'
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME', '')
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', '')
+    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@omninexsus.com')
+    SITE_URL      = os.environ.get('SITE_URL', 'https://www.omninexsus.com')
+    VAPID_PUBLIC_KEY  = os.environ.get('VAPID_PUBLIC_KEY',  'BFpiirOZsoMKpDenm9Lr8rqLmWms4vc3IrjRO8KSj1AUCqpDFrFjbCh0AGp92mnKKy_R2YJIe-kbaCj7AMFhwSA')
+    VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY', '0PS0l-BioW2ILRUkqYH70nms1imBikOmrdKHqhDvL10')
+    VAPID_CLAIMS      = {'sub': 'mailto:' + os.environ.get('MAIL_USERNAME', 'admin@omninexsus.com')}
     LANGUAGES = ['en', 'tr', 'de', 'ja', 'fr', 'es']
     BABEL_DEFAULT_LOCALE = os.environ.get('BABEL_DEFAULT_LOCALE', 'tr')
