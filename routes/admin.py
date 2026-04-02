@@ -42,7 +42,9 @@ def users():
     q     = request.args.get('q', '').strip()
     query = User.query
     if q:
-        query = query.filter(User.username.ilike(f'%{q}%') | User.email.ilike(f'%{q}%'))
+        query = query.filter(
+            User.username.ilike(f'%{q}%') | User.email.ilike(f'%{q}%')
+        )
     users_page = query.order_by(User.created_at.desc()).paginate(page=page, per_page=25)
     return render_template('admin/users.html', users_page=users_page, q=q)
 
@@ -78,7 +80,7 @@ def toggle_active(user_id):
 @admin_required
 def activate_user(user_id):
     user = User.query.get_or_404(user_id)
-    user.is_active = True
+    user.is_active      = True
     user.email_verified = True
     user.verification_token = None
     db.session.commit()
@@ -92,30 +94,40 @@ def send_notification():
     title = data.get('title', 'OmniNexus').strip()
     body  = data.get('body', '').strip()
     url   = data.get('url', '/')
+
     if not body:
         return jsonify({'success': False, 'error': 'Bildirim metni gerekli.'}), 400
+
     subs = PushSubscription.query.all()
     sent, failed = 0, 0
+
     try:
         from pywebpush import webpush, WebPushException
         import json
         vapid_private = current_app.config['VAPID_PRIVATE_KEY']
         vapid_claims  = current_app.config['VAPID_CLAIMS']
+
         for sub in subs:
             try:
                 webpush(
-                    subscription_info={'endpoint': sub.endpoint, 'keys': {'p256dh': sub.p256dh, 'auth': sub.auth}},
+                    subscription_info={
+                        'endpoint': sub.endpoint,
+                        'keys': {'p256dh': sub.p256dh, 'auth': sub.auth}
+                    },
                     data=json.dumps({'title': title, 'body': body, 'url': url}),
-                    vapid_private_key=vapid_private, vapid_claims=vapid_claims
+                    vapid_private_key=vapid_private,
+                    vapid_claims=vapid_claims
                 )
                 sent += 1
             except WebPushException as e:
                 if '410' in str(e) or '404' in str(e):
                     db.session.delete(sub)
                 failed += 1
+
         db.session.commit()
     except ImportError:
         return jsonify({'success': False, 'error': 'pywebpush modulu yuklu degil.'}), 500
+
     return jsonify({'success': True, 'sent': sent, 'failed': failed,
                     'message': f'{sent} aboneye bildirim gonderildi.'})
 
@@ -123,9 +135,19 @@ def send_notification():
 @admin_bp.route('/mail-test', methods=['POST'])
 @admin_required
 def mail_test():
+    # Guard: don't attempt SMTP if mail is not configured (avoids worker timeout)
+    if not current_app.config.get('MAIL_USERNAME'):
+        return jsonify({
+            'success': False,
+            'error': 'Mail yapilandirilmamis. Railway Variables kismina MAIL_USERNAME ve MAIL_PASSWORD ekleyin.'
+        }), 503
+
     try:
-        msg = Message(subject='OmniNexus - Mail Test', recipients=[current_user.email],
-                      body='OmniNexus mail sistemi calisiyor!')
+        msg = Message(
+            subject='OmniNexus - Mail Test',
+            recipients=[current_user.email],
+            body='OmniNexus mail sistemi calisiyor!'
+        )
         mail.send(msg)
         return jsonify({'success': True, 'message': f'Test maili {current_user.email} adresine gonderildi.'})
     except Exception as e:
