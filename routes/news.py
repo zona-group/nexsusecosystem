@@ -1,113 +1,189 @@
-from flask import Blueprint, jsonify, request, current_app
-from datetime import datetime, timedelta
-import requests, hashlib, json, os
+from flask import Blueprint, jsonify, request, current_app, Response
+from flask_login import login_required, current_user
+from app import db
+from models import SavedArticle
+import requests
+import hashlib
+import time
 
 news = Blueprint('news', __name__)
 
 _cache = {}
 
-CATEGORIES = {
-    'gaming':    'gaming OR "video games" OR PlayStation OR Xbox OR Nintendo OR Steam',
-    'ai':        'artificial intelligence OR "machine learning" OR ChatGPT OR OpenAI OR Claude AI',
-    'tech':      'technology OR Apple OR Google OR Microsoft OR NVIDIA OR semiconductor',
-    'arduino':   'Arduino OR "Raspberry Pi" OR IoT OR "maker project" OR microcontroller',
+# Language code → NewsAPI country code
+LANG_TO_COUNTRY = {
+    'en': 'us',
+    'tr': 'tr',
+    'de': 'de',
+    'fr': 'fr',
+    'es': 'mx',
+    'ja': 'jp',
+    'ar': 'ae',
+    'pt': 'br',
+    'ru': 'ru',
+    'zh': 'cn',
 }
 
-def get_news(category='tech', lang='en', page=1):
-    cache_key = f"{category}_{lang}_{page}"
-    now = datetime.utcnow()
+# Category fallback images (Unsplash topic-based)
+CATEGORY_IMAGES = {
+    'general':       'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=600&q=80',
+    'technology':    'https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&q=80',
+    'business':      'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&q=80',
+    'science':       'https://images.unsplash.com/photo-1532094349884-543559be69d2?w=600&q=80',
+    'health':        'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&q=80',
+    'sports':        'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=600&q=80',
+    'entertainment': 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=600&q=80',
+}
 
-    if cache_key in _cache:
-        cached_time, cached_data = _cache[cache_key]
-        ttl = current_app.config.get('NEWS_CACHE_MINUTES', 15)
-        if now - cached_time < timedelta(minutes=ttl):
-            return cached_data
+
+def _cache_get(key):
+    entry = _cache.get(key)
+    if entry:
+        ts, data = entry
+        ttl = current_app.config.get('NEWS_CACHE_MINUTES', 15) * 60
+        if time.time() - ts < ttl:
+            return data
+    return None
+
+
+def _cache_set(key, data):
+    _cache[key] = (time.time(), data)
+
+
+def fetch_news(category='general', country='us', page_size=20, page=1):
+    cache_key = f'{category}_{country}_{page}'
+    cached = _cache_get(cache_key)
+    if cached:
+        return cached
 
     api_key = current_app.config.get('NEWS_API_KEY', '')
     if not api_key or api_key == 'YOUR_NEWSAPI_KEY_HERE':
-        return _mock_news(category)
+        return {'articles': [], 'error': 'NewsAPI key not configured'}
 
-    query = CATEGORIES.get(category, category)
-    url = 'https://newsapi.org/v2/everything'
     params = {
-        'q':        query,
-        'language': lang if lang in ['en','de','fr','es'] else 'en',
-        'sortBy':   'publishedAt',
-        'pageSize': 12,
-        'page':     page,
-        'apiKey':   api_key,
+        'apiKey': api_key,
+        'category': category,
+        'country': country,
+        'pageSize': page_size,
+        'page': page,
     }
+    try:
+        resp = requests.get('https://newsapi.org/v2/top-headlines', params=params, timeout=10)
+        data = resp.json()
+        if data.get('status') == 'ok':
+            articles = data.get('articles', [])
+            fallback = CATEGORY_IMAGES.get(category, CATEGORY_IMAGES['general'])
+            for a in articles:
+                url = a.get('url', '')
+                a['id'] = hashlib.md5(url.encode()).hexdigest()
+                # Fill in fallback image if missing
+                if not a.get('urlToImage'):
+                    a['urlToImage'] = fallback
+            result = {'articles': articles, 'totalResults': data.get('totalResults', 0)}
+            _cache_set(cache_key, result)
+            return result
+        return {'articles': [], 'error': data.get('message', 'API error')}
+    except Exception as e:
+        return {'articles': [], 'error': str(e)}
+
+
+@news.route('/')
+def index():
+    category = request.args.get('category', 'general')
+    country  = request.args.get('country', 'us')
+    page     = int(request.args.get('page', 1))
+    return jsonify(fetch_news(category, country, page=page))
+
+
+@news.route('/imgproxy')
+def img_proxy():
+    """Proxy news images to avoid CORS/hotlink issues on mobile."""
+    url = request.args.get('url', '')
+    if not url or not url.startswith('http'):
+        return '', 400
+    try:
+        r = requests.get(url, timeout=8, stream=True,
+                         headers={'User-Agent': 'Mozilla/5.0'})
+        ct = r.headers.get('Content-Type', 'image/jpeg')
+        return Response(r.content, content_type=ct,
+                        headers={'Cache-Control': 'public, max-age=86400'})
+    except Exception:
+        return '', 502
+
+
+@news.route('/search')
+def search():
+    q = request.args.get('q', '')
+    if not q:
+        return jsonify({'articles': [], 'error': 'Query required'})
+
+    api_key = current_app.config.get('NEWS_API_KEY', '')
+    if not api_key or api_key == 'YOUR_NEWSAPI_KEY_HERE':
+        return jsonify({'articles': [], 'error': 'NewsAPI key not configured'})
+
+    cached = _cache_get(f'search_{q}')
+    if cached:
+        return jsonify(cached)
 
     try:
-        resp = requests.get(url, params=params, timeout=8)
-        resp.raise_for_status()
+        resp = requests.get(
+            'https://newsapi.org/v2/everything',
+            params={'apiKey': api_key, 'q': q, 'sortBy': 'publishedAt', 'pageSize': 20},
+            timeout=10
+        )
         data = resp.json()
-        articles = _format_articles(data.get('articles', []), category)
-        _cache[cache_key] = (now, articles)
-        return articles
+        articles = data.get('articles', [])
+        for a in articles:
+            a['id'] = hashlib.md5(a.get('url', '').encode()).hexdigest()
+        result = {'articles': articles}
+        _cache_set(f'search_{q}', result)
+        return jsonify(result)
     except Exception as e:
-        current_app.logger.error(f"NewsAPI error: {e}")
-        return _mock_news(category)
+        return jsonify({'articles': [], 'error': str(e)})
 
 
-def _format_articles(articles, category):
-    result = []
-    for a in articles:
-        if not a.get('title') or a['title'] == '[Removed]':
-            continue
-        article_id = hashlib.md5(a.get('url','').encode()).hexdigest()
-        result.append({
-            'id':          article_id,
-            'title':       a.get('title',''),
-            'description': a.get('description',''),
-            'url':         a.get('url',''),
-            'image':       a.get('urlToImage',''),
-            'source':      a.get('source',{}).get('name',''),
-            'published':   a.get('publishedAt',''),
-            'category':    category,
-        })
-    return result
+@news.route('/save', methods=['POST'])
+@login_required
+def save_article():
+    data = request.get_json() or {}
+    article_id = data.get('article_id')
+    if not article_id:
+        return jsonify({'success': False, 'error': 'article_id required'}), 400
+
+    existing = SavedArticle.query.filter_by(
+        user_id=current_user.id, article_id=article_id
+    ).first()
+
+    if existing:
+        db.session.delete(existing)
+        db.session.commit()
+        return jsonify({'success': True, 'saved': False})
+
+    saved = SavedArticle(
+        user_id=current_user.id,
+        article_id=article_id,
+        title=data.get('title', ''),
+        url=data.get('url', ''),
+        image=data.get('image', ''),
+        source=data.get('source', '')
+    )
+    db.session.add(saved)
+    db.session.commit()
+    return jsonify({'success': True, 'saved': True})
 
 
-def _mock_news(category):
-    mock = {
-        'gaming': [
-            {'id':'g1','title':'GTA VI Release Window Officially Confirmed','description':'Rockstar reveals firm launch date with explosive new footage.','url':'#','image':'','source':'IGN','published':'2025-03-31T10:00:00Z','category':'gaming'},
-            {'id':'g2','title':'Steam Hits 40 Million Concurrent Users Record','description':'Valve platform shatters records driven by massive launches.','url':'#','image':'','source':'PC Gamer','published':'2025-03-31T08:00:00Z','category':'gaming'},
-            {'id':'g3','title':'PS5 Pro vs Xbox Series X — 2025 Definitive Comparison','description':'Which console wins the performance crown this generation?','url':'#','image':'','source':'Digital Foundry','published':'2025-03-30T14:00:00Z','category':'gaming'},
-        ],
-        'ai': [
-            {'id':'a1','title':'GPT-5 Multimodal Breaks All Benchmarks','description':'OpenAI model scores unprecedented results across vision, code and reasoning.','url':'#','image':'','source':'The Verge','published':'2025-03-31T09:00:00Z','category':'ai'},
-            {'id':'a2','title':'Claude 4 Tops Enterprise AI Adoption Charts Worldwide','description':'Anthropic model overtakes competitors in B2B deployments globally.','url':'#','image':'','source':'VentureBeat','published':'2025-03-31T07:00:00Z','category':'ai'},
-            {'id':'a3','title':'Google Gemini Ultra 2 Scores Human-Level on MMLU','description':'DeepMind achieves landmark milestone in general intelligence benchmarks.','url':'#','image':'','source':'TechCrunch','published':'2025-03-30T12:00:00Z','category':'ai'},
-        ],
-        'tech': [
-            {'id':'t1','title':'Apple M4 Ultra Benchmarks Leak — Destroys Every Record','description':'2x performance leap over M3 Ultra with 40% lower power draw.','url':'#','image':'','source':'MacRumors','published':'2025-03-31T06:00:00Z','category':'tech'},
-            {'id':'t2','title':'NVIDIA Blackwell Ultra 1000W TDP Monster Enters Testing','description':'Engineering samples of GB202 confirm extreme performance targets.','url':'#','image':'','source':'AnandTech','published':'2025-03-30T16:00:00Z','category':'tech'},
-        ],
-        'arduino': [
-            {'id':'ar1','title':'Arduino Nano ESP32 Complete IoT Dashboard Guide 2025','description':'Build Wi-Fi sensor dashboard with MQTT in under 2 hours.','url':'#','image':'','source':'Hackster.io','published':'2025-03-31T05:00:00Z','category':'arduino'},
-            {'id':'ar2','title':'Arduino Uno R4 WiFi Sells Out Globally Within 48 Hours','description':'Demand far exceeds supply as maker community adopts new platform.','url':'#','image':'','source':'Arduino Blog','published':'2025-03-30T10:00:00Z','category':'arduino'},
-        ],
-    }
-    return mock.get(category, mock['tech'])
-
-
-@news.route('/api/news')
-def api_news():
-    category = request.args.get('cat', 'tech')
-    lang     = request.args.get('lang', 'en')
-    page     = int(request.args.get('page', 1))
-    articles = get_news(category, lang, page)
-    return jsonify({'articles': articles, 'category': category})
-
-
-@news.route('/api/news/all')
-def api_news_all():
-    lang = request.args.get('lang', 'en')
-    all_articles = []
-    for cat in CATEGORIES:
-        articles = get_news(cat, lang, 1)
-        all_articles.extend(articles[:3])
-    all_articles.sort(key=lambda x: x.get('published',''), reverse=True)
-    return jsonify({'articles': all_articles})
+@news.route('/saved')
+@login_required
+def saved_articles():
+    articles = SavedArticle.query.filter_by(user_id=current_user.id)\
+        .order_by(SavedArticle.saved_at.desc()).all()
+    return jsonify({'articles': [
+        {
+            'id': a.article_id,
+            'title': a.title,
+            'url': a.url,
+            'image': a.image,
+            'source': a.source,
+            'saved_at': a.saved_at.isoformat()
+        } for a in articles
+    ]})
