@@ -1,254 +1,340 @@
 <!DOCTYPE html>
-<html lang="en" id="html-root">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OmniNexus — Global Tech Hub</title>
-<meta name="description" content="Games, AI, Technology, Arduino news. Global tech hub.">
-<meta name="theme-color" content="#00ff88">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="OmniNexus">
-<link rel="manifest" href="/static/manifest.json">
-<!-- Google AdSense — CA-PUB kodunu buraya gir -->
-<!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script> -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/css/main.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#080c14" />
+  <meta name="description" content="OmniNexus — Global news in your language. Real-time headlines, AI-powered translation." />
+  <link rel="manifest" href="/static/manifest.json" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
+  <title>OmniNexus — Global News</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="/static/css/main.css" />
 </head>
 <body>
 
 <!-- NAVBAR -->
 <nav class="navbar">
-  <a href="/" class="logo">
-    <svg width="38" height="38" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-      <line x1="40" y1="40" x2="16" y2="20" stroke="#00ff88" stroke-width="1.8" stroke-opacity="0.7"/>
-      <line x1="40" y1="40" x2="16" y2="60" stroke="#00ff88" stroke-width="1.8" stroke-opacity="0.7"/>
-      <line x1="40" y1="40" x2="64" y2="20" stroke="#00ff88" stroke-width="1.8" stroke-opacity="0.7"/>
-      <line x1="40" y1="40" x2="64" y2="60" stroke="#00ff88" stroke-width="1.8" stroke-opacity="0.7"/>
-      <line x1="40" y1="40" x2="72" y2="40" stroke="#00ff88" stroke-width="2.2"/>
-      <line x1="16" y1="20" x2="64" y2="20" stroke="#00ff88" stroke-width="0.8" stroke-opacity="0.3"/>
-      <line x1="16" y1="60" x2="64" y2="60" stroke="#00ff88" stroke-width="0.8" stroke-opacity="0.3"/>
-      <circle cx="40" cy="40" r="12" fill="#00ff88" fill-opacity="0.1" stroke="#00ff88" stroke-width="2"/>
-      <circle cx="40" cy="40" r="5" fill="#00ff88"/>
-      <circle cx="16" cy="20" r="4.5" fill="#003322" stroke="#00ff88" stroke-width="1.5"/>
-      <circle cx="16" cy="60" r="4.5" fill="#003322" stroke="#00ff88" stroke-width="1.5"/>
-      <circle cx="64" cy="20" r="4.5" fill="#003322" stroke="#00ff88" stroke-width="1.5"/>
-      <circle cx="64" cy="60" r="4.5" fill="#003322" stroke="#00ff88" stroke-width="1.5"/>
-      <circle cx="72" cy="40" r="5.5" fill="#00ff88"/>
-    </svg>
-    <div class="logo-wordmark">
-      <span class="logo-omni">OMNI</span>
-      <span class="logo-nexus">NEXUS</span>
+  <a class="nav-brand" href="/">
+    <div class="brand-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none" width="28" height="28">
+        <defs>
+          <linearGradient id="gM" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#6366f1"/>
+            <stop offset="50%" stop-color="#a855f7"/>
+            <stop offset="100%" stop-color="#22d3ee"/>
+          </linearGradient>
+          <radialGradient id="gC" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#22d3ee"/>
+            <stop offset="100%" stop-color="#6366f1" stop-opacity="0.8"/>
+          </radialGradient>
+          <radialGradient id="gN" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#a855f7"/>
+            <stop offset="100%" stop-color="#6366f1" stop-opacity="0.7"/>
+          </radialGradient>
+          <filter id="gl"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="cgl"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <line x1="100" y1="100" x2="100" y2="38"  stroke="url(#gM)" stroke-width="1.5" opacity="0.6"/>
+        <line x1="100" y1="100" x2="156" y2="62"  stroke="url(#gM)" stroke-width="1.5" opacity="0.6"/>
+        <line x1="100" y1="100" x2="156" y2="138" stroke="url(#gM)" stroke-width="1.5" opacity="0.6"/>
+        <line x1="100" y1="100" x2="100" y2="162" stroke="url(#gM)" stroke-width="1.5" opacity="0.6"/>
+        <line x1="100" y1="100" x2="44"  y2="138" stroke="url(#gM)" stroke-width="1.5" opacity="0.6"/>
+        <line x1="100" y1="100" x2="44"  y2="62"  stroke="url(#gM)" stroke-width="1.5" opacity="0.6"/>
+        <line x1="100" y1="38"  x2="156" y2="62"  stroke="#6366f1" stroke-width="0.9" opacity="0.4"/>
+        <line x1="156" y1="62"  x2="156" y2="138" stroke="#6366f1" stroke-width="0.9" opacity="0.4"/>
+        <line x1="156" y1="138" x2="100" y2="162" stroke="#6366f1" stroke-width="0.9" opacity="0.4"/>
+        <line x1="100" y1="162" x2="44"  y2="138" stroke="#6366f1" stroke-width="0.9" opacity="0.4"/>
+        <line x1="44"  y1="138" x2="44"  y2="62"  stroke="#6366f1" stroke-width="0.9" opacity="0.4"/>
+        <line x1="44"  y1="62"  x2="100" y2="38"  stroke="#6366f1" stroke-width="0.9" opacity="0.4"/>
+        <line x1="100" y1="38"  x2="156" y2="138" stroke="#a855f7" stroke-width="0.6" opacity="0.2"/>
+        <line x1="156" y1="62"  x2="44"  y2="138" stroke="#a855f7" stroke-width="0.6" opacity="0.2"/>
+        <line x1="156" y1="138" x2="44"  y2="62"  stroke="#a855f7" stroke-width="0.6" opacity="0.2"/>
+        <circle cx="100" cy="38"  r="9" fill="#0d1424" stroke="url(#gM)" stroke-width="1.5" filter="url(#gl)"/>
+        <circle cx="100" cy="38"  r="5" fill="url(#gN)"/>
+        <circle cx="156" cy="62"  r="9" fill="#0d1424" stroke="url(#gM)" stroke-width="1.5" filter="url(#gl)"/>
+        <circle cx="156" cy="62"  r="5" fill="url(#gN)"/>
+        <circle cx="156" cy="138" r="9" fill="#0d1424" stroke="url(#gM)" stroke-width="1.5" filter="url(#gl)"/>
+        <circle cx="156" cy="138" r="5" fill="url(#gN)"/>
+        <circle cx="100" cy="162" r="9" fill="#0d1424" stroke="url(#gM)" stroke-width="1.5" filter="url(#gl)"/>
+        <circle cx="100" cy="162" r="5" fill="url(#gN)"/>
+        <circle cx="44"  cy="138" r="9" fill="#0d1424" stroke="url(#gM)" stroke-width="1.5" filter="url(#gl)"/>
+        <circle cx="44"  cy="138" r="5" fill="url(#gN)"/>
+        <circle cx="44"  cy="62"  r="9" fill="#0d1424" stroke="url(#gM)" stroke-width="1.5" filter="url(#gl)"/>
+        <circle cx="44"  cy="62"  r="5" fill="url(#gN)"/>
+        <circle cx="100" cy="100" r="28" fill="none" stroke="#6366f1" stroke-width="1" opacity="0.25"/>
+        <circle cx="100" cy="100" r="22" fill="none" stroke="#a855f7" stroke-width="1" opacity="0.35"/>
+        <circle cx="100" cy="100" r="18" fill="#0d1424" stroke="url(#gM)" stroke-width="2" filter="url(#cgl)"/>
+        <circle cx="100" cy="100" r="14" fill="url(#gC)"/>
+        <text x="100" y="106" font-family="Arial Black,sans-serif" font-size="14" font-weight="900" text-anchor="middle" fill="white">N</text>
+      </svg>
+    </div>
+    <div>
+      <div class="brand-name">OmniNexus</div>
+      <div class="brand-tag">Live · Global</div>
     </div>
   </a>
-
-  <div class="nav-links" id="nav-links">
-    <a href="#" onclick="loadCat('gaming')">Games</a>
-    <a href="#" onclick="loadCat('ai')">AI</a>
-    <a href="#" onclick="loadCat('tech')">Tech</a>
-    <a href="#" onclick="loadCat('arduino')">Arduino</a>
-  </div>
-
-  <div class="nav-right">
-    <select class="lang-select" id="lang-select" onchange="setLang(this.value)">
-      <option value="en">EN</option>
-      <option value="tr">TR</option>
-      <option value="de">DE</option>
-      <option value="ja">JA</option>
-      <option value="fr">FR</option>
-      <option value="es">ES</option>
-    </select>
-
-    {% if current_user.is_authenticated %}
-    <div class="user-menu">
-      <button class="user-btn" onclick="toggleUserMenu()">
-        <span class="user-avatar">{{ current_user.username[0].upper() }}</span>
-        {{ current_user.username }}
-      </button>
-      <div class="user-dropdown" id="user-dropdown">
-        <a href="/auth/logout">Logout</a>
-      </div>
+  <div class="nav-center">
+    <div class="search-wrap">
+      <input type="text" id="searchInput" placeholder="Search global news..." autocomplete="off" />
+      <button id="searchBtn">🔍 Search</button>
     </div>
+  </div>
+  <div class="nav-right">
+    <select id="langSelect" class="lang-select" title="Language">
+      <option value="en">🇺🇸 EN</option>
+      <option value="tr">🇹🇷 TR</option>
+      <option value="de">🇩🇪 DE</option>
+      <option value="fr">🇫🇷 FR</option>
+      <option value="es">🇪🇸 ES</option>
+      <option value="ja">🇯🇵 JA</option>
+    </select>
+    {% if user and user.is_authenticated %}
+      <div class="nav-username">
+        <div class="avatar-dot">{{ user.username[0].upper() }}</div>
+        <span>{{ user.username }}</span>
+      </div>
+      <a href="/auth/logout" class="btn btn-sm">Logout</a>
     {% else %}
-    <button class="login-btn" onclick="openModal('login')">Login</button>
-    <button class="register-btn" onclick="openModal('register')">Register</button>
+      <button class="btn btn-sm" onclick="openModal('loginModal')">Login</button>
+      <button class="btn btn-sm btn-primary" onclick="openModal('registerModal')">Sign Up</button>
     {% endif %}
-
-    <button id="pwa-btn" class="pwa-btn" onclick="installPWA()" style="display:none">+ Install</button>
-    <div class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></div>
   </div>
 </nav>
 
-<!-- HERO -->
-<section class="hero">
-  <div class="hero-tag">
-    <span class="pulse-dot"></span> Live Global Tech Hub
+<!-- BREAKING NEWS TICKER -->
+<div class="ticker-wrap">
+  <span class="ticker-label">⚡ Breaking</span>
+  <div class="ticker-inner" id="tickerInner">
+    <span class="ticker-item">Markets reach all-time high amid AI boom</span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item">New climate accord signed by 120 nations</span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item">SpaceX Starship completes lunar mission</span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item">WHO announces breakthrough cancer treatment</span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item">Tech giants unveil next-gen AI assistants</span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item">Global GDP growth surpasses 4% forecast</span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item">Markets reach all-time high amid AI boom</span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item">New climate accord signed by 120 nations</span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item">SpaceX Starship completes lunar mission</span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item">WHO announces breakthrough cancer treatment</span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item">Tech giants unveil next-gen AI assistants</span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item">Global GDP growth surpasses 4% forecast</span>
+    <span class="ticker-sep">◆</span>
   </div>
-  <h1>The <span class="green">Nexus</span> of<br>Everything Digital</h1>
-  <p>Games · AI · Technology · Arduino — real-time global news in one place.</p>
-</section>
-
-<!-- TICKER -->
-<div class="ticker">
-  <span class="ticker-label">Breaking</span>
-  <div class="ticker-track">
-    <div class="ticker-inner" id="ticker-inner">
-      <span class="ticker-item"><span class="tdot"></span>NVIDIA announces next-gen GPU architecture</span>
-      <span class="ticker-item"><span class="tdot"></span>OpenAI releases new reasoning model</span>
-      <span class="ticker-item"><span class="tdot"></span>Arduino Nano ESP32 hits record sales</span>
-      <span class="ticker-item"><span class="tdot"></span>GTA VI release window confirmed</span>
-      <span class="ticker-item"><span class="tdot"></span>Apple M4 Ultra benchmarks leaked</span>
-      <span class="ticker-item"><span class="tdot"></span>NVIDIA announces next-gen GPU architecture</span>
-      <span class="ticker-item"><span class="tdot"></span>OpenAI releases new reasoning model</span>
-      <span class="ticker-item"><span class="tdot"></span>Arduino Nano ESP32 hits record sales</span>
-      <span class="ticker-item"><span class="tdot"></span>GTA VI release window confirmed</span>
-      <span class="ticker-item"><span class="tdot"></span>Apple M4 Ultra benchmarks leaked</span>
-    </div>
-  </div>
-</div>
-
-<!-- ADSENSE — LEADERBOARD (728x90) — ticker altı -->
-<div class="ad-leaderboard">
-  <!-- <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="XXXXXXXXXX" data-ad-format="auto" data-full-width-responsive="true"></ins>
-  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script> -->
-  <div class="ad-placeholder">Advertisement</div>
 </div>
 
 <!-- CATEGORY TABS -->
-<div class="cats">
-  <button class="cat active" onclick="loadCat('all',this)">All</button>
-  <button class="cat" onclick="loadCat('gaming',this)">Gaming</button>
-  <button class="cat" onclick="loadCat('ai',this)">AI</button>
-  <button class="cat" onclick="loadCat('tech',this)">Tech</button>
-  <button class="cat" onclick="loadCat('arduino',this)">Arduino</button>
+<div class="categories">
+  <button class="cat-btn active" data-cat="general">🏠 Top Stories</button>
+  <button class="cat-btn" data-cat="technology">💻 Technology</button>
+  <button class="cat-btn" data-cat="business">📈 Business</button>
+  <button class="cat-btn" data-cat="science">🔬 Science</button>
+  <button class="cat-btn" data-cat="health">🏥 Health</button>
+  <button class="cat-btn" data-cat="sports">⚽ Sports</button>
+  <button class="cat-btn" data-cat="entertainment">🎬 Entertainment</button>
 </div>
 
-<!-- MAIN -->
-<div class="main-layout">
-  <div class="content-area">
-    <div class="section-title">Latest News</div>
-    <div class="news-grid" id="news-grid">
-      <div class="loading-state">
-        <div class="spinner"></div>
-        <span>Loading news...</span>
+<!-- MAIN CONTENT -->
+<div class="page-wrap">
+
+  <!-- HERO SECTION -->
+  <section class="hero-section">
+    <div id="heroSlot"><!-- injected by JS --></div>
+  </section>
+
+  <!-- NEWS GRID -->
+  <div class="section-header">
+    <span class="section-title" id="sectionTitle">Latest Headlines</span>
+    <div class="section-line"></div>
+  </div>
+  <div id="newsGrid" class="news-grid">
+    <div class="skeleton-card">
+      <div class="skeleton skeleton-img"></div>
+      <div class="skeleton-body">
+        <div class="skeleton skeleton-src"></div>
+        <div class="skeleton skeleton-t1"></div>
+        <div class="skeleton skeleton-t2"></div>
+        <div class="skeleton skeleton-d1"></div>
+        <div class="skeleton skeleton-d2"></div>
+        <div class="skeleton skeleton-ft"></div>
       </div>
     </div>
-    <div class="load-more-wrap">
-      <button class="load-more-btn" id="load-more" onclick="loadMore()" style="display:none">Load More</button>
+    <div class="skeleton-card">
+      <div class="skeleton skeleton-img"></div>
+      <div class="skeleton-body">
+        <div class="skeleton skeleton-src"></div>
+        <div class="skeleton skeleton-t1"></div>
+        <div class="skeleton skeleton-t2"></div>
+        <div class="skeleton skeleton-d1"></div>
+        <div class="skeleton skeleton-d2"></div>
+        <div class="skeleton skeleton-ft"></div>
+      </div>
     </div>
-
-    <!-- ADSENSE — IN-ARTICLE (haberlerin altı) -->
-    <div class="ad-inarticle">
-      <!-- <ins class="adsbygoogle" style="display:block;text-align:center" data-ad-layout="in-article" data-ad-format="fluid" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="XXXXXXXXXX"></ins>
-      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script> -->
-      <div class="ad-placeholder">Advertisement</div>
+    <div class="skeleton-card">
+      <div class="skeleton skeleton-img"></div>
+      <div class="skeleton-body">
+        <div class="skeleton skeleton-src"></div>
+        <div class="skeleton skeleton-t1"></div>
+        <div class="skeleton skeleton-t2"></div>
+        <div class="skeleton skeleton-d1"></div>
+        <div class="skeleton skeleton-d2"></div>
+        <div class="skeleton skeleton-ft"></div>
+      </div>
     </div>
   </div>
 
-  <aside class="sidebar">
-    <div class="sidebar-section">
-      <div class="sidebar-title">Sponsored</div>
-      <!-- ADSENSE — SIDEBAR (300x250) -->
-      <!-- <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="XXXXXXXXXX" data-ad-format="auto"></ins>
-      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script> -->
-      <div class="ad-placeholder ad-sidebar">Advertisement</div>
-    </div>
-
-    <div class="sidebar-section">
-      <div id="trending-list"><div class="loading-state"><div class="spinner"></div></div></div>
-    </div>
-    <div class="sidebar-section">
-      <div class="sidebar-title">Install App</div>
-      <div class="install-card">
-        <p>Add OmniNexus to your home screen — no app store needed.</p>
-        <button class="pwa-install-btn" onclick="installPWA()">Install Free</button>
-      </div>
-    </div>
-  </aside>
-</div>
-
-<!-- PWA BANNER -->
-<div class="pwa-banner" id="pwa-banner" style="display:none">
-  <div class="pwa-text">
-    <strong>Install OmniNexus</strong>
-    <span>No Play Store needed — add to home screen directly.</span>
-  </div>
-  <button class="pwa-install-btn" onclick="installPWA()">Install</button>
-  <button class="pwa-close" onclick="document.getElementById('pwa-banner').style.display='none'">✕</button>
-</div>
-
-<!-- AUTH MODAL -->
-<div class="modal-overlay" id="modal-overlay" onclick="closeModal()">
-  <div class="modal" onclick="event.stopPropagation()">
-    <button class="modal-close" onclick="closeModal()">✕</button>
-    <div class="modal-tabs">
-      <button class="modal-tab active" id="tab-login" onclick="switchTab('login')">Login</button>
-      <button class="modal-tab" id="tab-register" onclick="switchTab('register')">Register</button>
-    </div>
-
-    <!-- LOGIN -->
-    <form id="form-login" onsubmit="submitAuth(event,'login')">
-      <div class="form-group">
-        <label>Email</label>
-        <input type="email" name="email" placeholder="you@email.com" required>
-      </div>
-      <div class="form-group">
-        <label>Password</label>
-        <input type="password" name="password" placeholder="••••••••" required>
-      </div>
-      <label class="remember-label">
-        <input type="checkbox" name="remember"> Remember me
-      </label>
-      <div class="form-error" id="login-error"></div>
-      <button type="submit" class="form-submit">Login</button>
-    </form>
-
-    <!-- REGISTER -->
-    <form id="form-register" style="display:none" onsubmit="submitAuth(event,'register')">
-      <div class="form-group">
-        <label>Username</label>
-        <input type="text" name="username" placeholder="cooluser123" minlength="3" required>
-      </div>
-      <div class="form-group">
-        <label>Email</label>
-        <input type="email" name="email" placeholder="you@email.com" required>
-      </div>
-      <div class="form-group">
-        <label>Password</label>
-        <input type="password" name="password" placeholder="Min 6 characters" minlength="6" required>
-      </div>
-      <div class="form-error" id="register-error"></div>
-      <button type="submit" class="form-submit">Create Account</button>
-    </form>
+  <div class="load-more-wrap">
+    <button id="loadMoreBtn" class="btn" style="display:none">Load more stories ↓</button>
   </div>
 </div>
 
-<!-- ARTICLE MODAL -->
-<div class="modal-overlay" id="article-overlay" onclick="closeArticle()">
-  <div class="article-modal" onclick="event.stopPropagation()">
-    <button class="modal-close" onclick="closeArticle()">✕</button>
-    <div id="article-content"></div>
-    <div class="comments-section">
-      <div class="section-title" style="margin-top:24px">Comments</div>
-      <div id="comments-list"></div>
-      <div id="comment-form-wrap"></div>
-    </div>
+<!-- COMMENTS PANEL -->
+<aside id="commentsPanel" class="comments-panel hidden">
+  <div class="panel-header">
+    <h3>💬 Discussion</h3>
+    <button class="panel-close" onclick="closeComments()">✕</button>
+  </div>
+  <div id="commentsBody" class="comments-body"></div>
+  <div class="comment-input-wrap" id="commentInputWrap" style="display:none">
+    <textarea id="commentInput" placeholder="Share your thoughts..." rows="3"></textarea>
+    <button class="btn btn-primary" id="submitComment">Post Comment</button>
+  </div>
+  {% if not (user and user.is_authenticated) %}
+    <p class="login-hint">Please <a href="#" onclick="openModal('loginModal')">login</a> to join the discussion.</p>
+  {% endif %}
+</aside>
+
+<!-- LOGIN MODAL -->
+<div id="loginModal" class="modal hidden">
+  <div class="modal-box">
+    <div class="modal-logo">🌐 OmniNexus</div>
+    <h2>Welcome back</h2>
+    <div id="loginError" class="form-error hidden"></div>
+
+    {% if config.GOOGLE_CLIENT_ID %}
+    <a href="/auth/google" class="btn btn-social btn-google full-w">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+      Continue with Google
+    </a>
+    <div class="modal-divider"><span>or</span></div>
+    {% endif %}
+
+    <input type="email" id="loginEmail" placeholder="Email address" />
+    <input type="password" id="loginPassword" placeholder="Password" />
+    <label class="remember-label">
+      <input type="checkbox" id="loginRemember" /> Remember me
+    </label>
+    <button class="btn btn-primary full-w" onclick="doLogin()">Login →</button>
+    <div class="modal-divider"></div>
+    <p class="switch-auth">No account? <a href="#" onclick="switchModal('loginModal','registerModal')">Sign up free</a></p>
+    <button class="modal-close" onclick="closeModal('loginModal')">✕</button>
   </div>
 </div>
 
-<div id="toast"></div>
+<!-- REGISTER MODAL -->
+<div id="registerModal" class="modal hidden">
+  <div class="modal-box">
+    <div class="modal-logo">🌐 OmniNexus</div>
+    <h2>Create account</h2>
+    <div id="registerError" class="form-error hidden"></div>
 
-<footer class="footer">
-  <span class="footer-brand">OmniNexus</span>
-  <div class="footer-links">
-    <a href="/about">About</a>
-    <a href="/privacy">Privacy Policy</a>
-    <a href="/contact">Contact</a>
-    <a href="/sitemap.xml">Sitemap</a>
+    {% if config.GOOGLE_CLIENT_ID %}
+    <a href="/auth/google" class="btn btn-social btn-google full-w">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+      Sign up with Google
+    </a>
+    <div class="modal-divider"><span>or</span></div>
+    {% endif %}
+
+    <input type="text" id="regUsername" placeholder="Username" />
+    <input type="email" id="regEmail" placeholder="Email address" />
+    <input type="password" id="regPassword" placeholder="Password (min. 6 characters)" />
+    <button class="btn btn-primary full-w" onclick="doRegister()">Create Account →</button>
+    <div class="modal-divider"></div>
+    <p class="switch-auth">Have an account? <a href="#" onclick="switchModal('registerModal','loginModal')">Login</a></p>
+    <button class="modal-close" onclick="closeModal('registerModal')">✕</button>
   </div>
-  <span class="footer-copy">© 2025 OmniNexus Global</span>
-</footer>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="toast hidden"></div>
 
 <script src="/static/js/main.js"></script>
+<script>
+// ── Service Worker + Push Notifications ───────────────────────────────────────────
+const VAPID_PUBLIC_KEY = '{{ config.VAPID_PUBLIC_KEY }}';
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  return new Uint8Array([...rawData].map(c => c.charCodeAt(0)));
+}
+
+async function subscribePush(reg) {
+  try {
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    });
+    const json = sub.toJSON();
+    await fetch('/push/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        endpoint: json.endpoint,
+        keys: { p256dh: json.keys.p256dh, auth: json.keys.auth }
+      })
+    });
+  } catch (e) { console.warn('Push subscribe failed:', e); }
+}
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/static/sw.js').then(reg => {
+    setTimeout(async () => {
+      if (Notification.permission === 'default') {
+        const perm = await Notification.requestPermission();
+        if (perm === 'granted') subscribePush(reg);
+      } else if (Notification.permission === 'granted') {
+        const existing = await reg.pushManager.getSubscription();
+        if (!existing) subscribePush(reg);
+      }
+    }, 4000);
+  }).catch(() => {});
+}
+</script>
+
+{% if current_user.is_authenticated and current_user.is_admin() %}
+<div style="position:fixed;bottom:16px;left:16px;z-index:9999">
+  <a href="/admin" style="display:inline-block;background:linear-gradient(135deg,#6366f1,#a855f7);
+     color:white;text-decoration:none;padding:10px 18px;border-radius:10px;
+     font-size:0.85rem;font-weight:700;box-shadow:0 4px 20px rgba(99,102,241,.4)">
+    ⚡ Admin Panel
+  </a>
+</div>
+{% endif %}
 </body>
 </html>
