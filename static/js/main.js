@@ -1,383 +1,471 @@
-// State
-let currentCat = 'all';
-let currentPage = 1;
-let currentLang = 'en';
-let currentArticle = null;
-let deferredPrompt = null;
-let isLoggedIn = false;
-let currentUsername = '';
+/* ===== OmniNexus — main.js v2 (Premium) ===== */
 
-// Init
-document.addEventListener('DOMContentLoaded', async () => {
-  await checkAuth();
-  loadNews('all');
-  loadTrending();
-  initPWA();
+let currentCategory = 'general';
+let currentPage     = 1;
+let currentArticleId = null;
+let currentLang     = localStorage.getItem('omni_lang') || 'en';
+let savedIds        = JSON.parse(localStorage.getItem('omni_saved') || '[]');
+let heroArticle     = null;
+
+// ======= INIT =======
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('langSelect').value = currentLang;
+  loadNews();
+
+  // Category buttons
+  document.querySelectorAll('.cat-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentCategory = btn.dataset.cat;
+      currentPage = 1;
+      const titles = {
+        general: 'Latest Headlines', technology: 'Technology',
+        business: 'Business & Finance', science: 'Science & Research',
+        health: 'Health & Wellness', sports: 'Sports', entertainment: 'Entertainment'
+      };
+      const el = document.getElementById('sectionTitle');
+      if (el) el.textContent = titles[currentCategory] || 'Latest Headlines';
+      loadNews(true);
+    });
+  });
+
+  // Search
+  const searchBtn = document.getElementById('searchBtn');
+  const searchInput = document.getElementById('searchInput');
+  if (searchBtn) searchBtn.addEventListener('click', doSearch);
+  if (searchInput) {
+    searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+  }
+
+  // Language — UI language only, does NOT reload news
+  document.getElementById('langSelect')?.addEventListener('change', e => {
+    currentLang = e.target.value;
+    localStorage.setItem('omni_lang', currentLang);
+    const label = e.target.options[e.target.selectedIndex].text;
+    showToast('Language changed to ' + label, 'success');
+  });
+
+  // Load more
+  document.getElementById('loadMoreBtn')?.addEventListener('click', () => {
+    currentPage++;
+    loadNews(false);
+  });
+
+  // Comment submit
+  document.getElementById('submitComment')?.addEventListener('click', submitComment);
+  document.getElementById('commentInput')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.ctrlKey) submitComment();
+  });
 });
 
-// AUTH CHECK
-async function checkAuth() {
-  try {
-    const r = await fetch('/auth/me');
-    const d = await r.json();
-    isLoggedIn = d.logged_in;
-    if (isLoggedIn) currentUsername = d.username;
-  } catch {}
-}
-
-// NEWS
-async function loadNews(cat, btnEl) {
-  currentCat = cat;
-  currentPage = 1;
-  if (btnEl) {
-    document.querySelectorAll('.cat').forEach(c => c.classList.remove('active'));
-    btnEl.classList.add('active');
+// ======= NEWS LOADING =======
+async function loadNews(reset = true) {
+  if (reset) {
+    currentPage = 1;
+    showSkeletons();
+    document.getElementById('heroSlot').innerHTML = '';
   }
-  const grid = document.getElementById('news-grid');
-  grid.innerHTML = '<div class="loading-state"><div class="spinner"></div><span>Loading news...</span></div>';
-  document.getElementById('load-more').style.display = 'none';
 
-  const endpoint = cat === 'all' ? '/news/api/news/all' : `/news/api/news?cat=${cat}&lang=${currentLang}`;
   try {
-    const r = await fetch(endpoint);
-    const d = await r.json();
-    renderNews(d.articles, false);
-    if (d.articles && d.articles.length >= 12) {
-      document.getElementById('load-more').style.display = 'inline-block';
+    const resp = await fetch(`/news/?category=${currentCategory}&page=${currentPage}`);
+    const data = await resp.json();
+
+    const grid = document.getElementById('newsGrid');
+
+    if (reset) grid.innerHTML = '';
+
+    if (!data.articles || data.articles.length === 0) {
+      if (reset) {
+        grid.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">🔎</div>
+            <div class="empty-state-title">No articles found</div>
+            <div class="empty-state-sub">Try a different category or check back later.</div>
+          </div>`;
+        document.getElementById('heroSlot').innerHTML = '';
+      }
+      document.getElementById('loadMoreBtn').style.display = 'none';
+      return;
     }
-  } catch {
-    grid.innerHTML = '<div class="loading-state">Failed to load news. Please refresh.</div>';
-  }
-}
 
-function loadCat(cat, el) {
-  loadNews(cat, el);
-}
-
-async function loadMore() {
-  currentPage++;
-  const endpoint = `/news/api/news?cat=${currentCat}&lang=${currentLang}&page=${currentPage}`;
-  try {
-    const r = await fetch(endpoint);
-    const d = await r.json();
-    renderNews(d.articles, true);
-    if (!d.articles || d.articles.length < 12) {
-      document.getElementById('load-more').style.display = 'none';
-    }
-  } catch {}
-}
-
-function renderNews(articles, append) {
-  const grid = document.getElementById('news-grid');
-  if (!append) grid.innerHTML = '';
-  if (!articles || articles.length === 0) {
-    if (!append) grid.innerHTML = '<div class="loading-state">No articles found.</div>';
-    return;
-  }
-  articles.forEach((a, i) => {
-    const card = document.createElement('div');
-    card.className = 'news-card' + (i === 0 && !append ? ' featured' : '');
-    card.onclick = () => openArticle(a);
-    const badgeClass = 'badge-' + (a.category || 'tech');
-    const timeAgo = formatTime(a.published);
-    card.innerHTML = `
-      ${a.image ? `<img class="news-image" src="${a.image}" alt="" onerror="this.style.display='none'">` : ''}
-      <span class="badge ${badgeClass}">${a.category || 'tech'}</span>
-      <h3>${escHtml(a.title)}</h3>
-      <p>${escHtml(a.description || '')}</p>
-      <div class="news-meta">
-        <span>${escHtml(a.source || '')}</span>
-        <span>·</span>
-        <span>${timeAgo}</span>
-      </div>`;
-    grid.appendChild(card);
-  });
-}
-
-async function loadTrending() {
-  try {
-    const r = await fetch('/news/api/news/all');
-    const d = await r.json();
-    const list = document.getElementById('trending-list');
-    list.innerHTML = '';
-    (d.articles || []).slice(0, 5).forEach((a, i) => {
-      const item = document.createElement('div');
-      item.className = 'trending-item';
-      item.onclick = () => openArticle(a);
-      item.innerHTML = `
-        <span class="trend-num">0${i+1}</span>
-        <div><div class="trend-text">${escHtml(a.title)}</div>
-        <span class="badge badge-${a.category || 'tech'}" style="margin-top:4px;display:inline-block">${a.category||'tech'}</span></div>`;
-      list.appendChild(item);
-    });
-  } catch {}
-}
-
-// ARTICLE MODAL
-function openArticle(article) {
-  currentArticle = article;
-  const overlay = document.getElementById('article-overlay');
-  const content = document.getElementById('article-content');
-  content.innerHTML = `
-    ${article.image ? `<img style="width:100%;height:200px;object-fit:cover;border-radius:4px;margin-bottom:16px" src="${article.image}" onerror="this.style.display='none'">` : ''}
-    <span class="badge badge-${article.category || 'tech'}">${article.category || 'tech'}</span>
-    <h2 style="margin-top:8px">${escHtml(article.title)}</h2>
-    <div class="article-meta">${article.source || ''} · ${formatTime(article.published)}</div>
-    <p>${escHtml(article.description || 'No description available.')}</p>
-    ${article.url && article.url !== '#' ? `<a href="${article.url}" target="_blank" class="article-link">Read Full Article →</a>` : ''}
-  `;
-  loadComments(article.id);
-  overlay.classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeArticle() {
-  document.getElementById('article-overlay').classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-// COMMENTS
-async function loadComments(articleId) {
-  const list = document.getElementById('comments-list');
-  const formWrap = document.getElementById('comment-form-wrap');
-  list.innerHTML = '<div style="padding:12px 0;font-size:12px;color:var(--text3)">Loading comments...</div>';
-
-  try {
-    const r = await fetch(`/comments/api/comments/${articleId}`);
-    const d = await r.json();
-    list.innerHTML = '';
-
-    if (!d.comments || d.comments.length === 0) {
-      list.innerHTML = '<div style="padding:12px 0;font-size:12px;color:var(--text3)">No comments yet. Be the first!</div>';
+    // Hero card: first article on first page
+    if (reset && data.articles.length > 0) {
+      heroArticle = data.articles[0];
+      renderHero(heroArticle);
+      data.articles.slice(1).forEach((a, i) => {
+        const card = createCard(a, i);
+        grid.appendChild(card);
+      });
     } else {
-      d.comments.forEach(c => {
-        list.appendChild(buildCommentEl(c, articleId));
+      data.articles.forEach((a, i) => {
+        const card = createCard(a, i);
+        grid.appendChild(card);
       });
     }
 
-    if (isLoggedIn) {
-      formWrap.innerHTML = `
-        <div class="comment-form">
-          <textarea id="comment-input" placeholder="Write a comment..."></textarea>
-          <button class="comment-submit" onclick="postComment('${articleId}')">Post Comment</button>
-        </div>`;
-    } else {
-      formWrap.innerHTML = `<div class="login-prompt">
-        <a onclick="openModal('login')">Login</a> or <a onclick="openModal('register')">register</a> to comment.
+    document.getElementById('loadMoreBtn').style.display =
+      data.articles.length >= 19 ? 'inline-flex' : 'none';
+
+  } catch (err) {
+    document.getElementById('newsGrid').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">⚠️</div>
+        <div class="empty-state-title">Could not load news</div>
+        <div class="empty-state-sub">Please check your NewsAPI key in Railway environment variables.</div>
       </div>`;
-    }
-  } catch {
-    list.innerHTML = '<div style="font-size:12px;color:#ff6655;padding:12px 0">Failed to load comments.</div>';
   }
 }
 
-function buildCommentEl(c, articleId) {
-  const div = document.createElement('div');
-  div.className = 'comment-item';
-  div.id = `comment-${c.id}`;
-  const initial = (c.author || 'U')[0].toUpperCase();
-  div.innerHTML = `
-    <div class="comment-header">
-      <div class="comment-avatar">${initial}</div>
-      <span class="comment-username">${escHtml(c.author)}</span>
-      <span class="comment-date">${c.created}</span>
-    </div>
-    <div class="comment-text">${escHtml(c.content)}</div>
-    <div class="comment-actions">
-      <button class="comment-action ${c.liked ? 'liked' : ''}" id="like-btn-${c.id}" onclick="likeComment(${c.id})">
-        ♥ <span id="like-count-${c.id}">${c.likes}</span>
-      </button>
-      ${isLoggedIn ? `<button class="comment-action" onclick="showReplyForm(${c.id},'${articleId}')">Reply</button>` : ''}
-    </div>
-    <div id="reply-form-${c.id}"></div>
-    <div id="replies-${c.id}" style="margin-left:28px">
-      ${(c.replies || []).map(r => `
-        <div class="comment-item" style="border-bottom:none;padding:8px 0">
-          <div class="comment-header">
-            <div class="comment-avatar" style="width:22px;height:22px;font-size:10px">${(r.author||'U')[0].toUpperCase()}</div>
-            <span class="comment-username">${escHtml(r.author)}</span>
-            <span class="comment-date">${r.created}</span>
+function showSkeletons() {
+  const grid = document.getElementById('newsGrid');
+  grid.innerHTML = Array(6).fill(0).map(() => `
+    <div class="skeleton-card">
+      <div class="skeleton skeleton-img"></div>
+      <div class="skeleton-body">
+        <div class="skeleton skeleton-src"></div>
+        <div class="skeleton skeleton-t1"></div>
+        <div class="skeleton skeleton-t2"></div>
+        <div class="skeleton skeleton-d1"></div>
+        <div class="skeleton skeleton-d2"></div>
+        <div class="skeleton skeleton-ft"></div>
+      </div>
+    </div>`).join('');
+}
+
+// ======= HERO CARD =======
+function renderHero(article) {
+  const slot = document.getElementById('heroSlot');
+  if (!slot || !article) return;
+  const date = article.publishedAt
+    ? new Date(article.publishedAt).toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric', year:'numeric' })
+    : '';
+  const isSaved = savedIds.includes(article.id);
+
+  const heroImg = article.urlToImage
+    ? `/news/imgproxy?url=${encodeURIComponent(article.urlToImage)}`
+    : null;
+
+  slot.innerHTML = `
+    <div class="hero-card" onclick="window.open('${escHtml(article.url)}','_blank')">
+      ${heroImg
+        ? `<img class="hero-img" src="${escHtml(heroImg)}" alt=""
+             onerror="this.style.background='linear-gradient(135deg,#1a2236,#0d1424)';this.style.opacity='.5'" />`
+        : `<div style="width:100%;height:100%;background:linear-gradient(135deg,#1a2236 0%,#0d1424 100%)"></div>`}
+      <div class="hero-overlay"></div>
+      <div class="hero-content">
+        <div class="hero-badges">
+          <span class="badge badge-source">${escHtml(article.source?.name || 'News')}</span>
+          <span class="badge badge-breaking">Breaking</span>
+        </div>
+        <h2 class="hero-title">${escHtml(article.title || '')}</h2>
+        ${article.description ? `<p class="hero-desc">${escHtml(article.description)}</p>` : ''}
+        <div class="hero-meta">
+          <span class="hero-date">📅 ${date}</span>
+          <div class="hero-actions" onclick="event.stopPropagation()">
+            <button class="btn btn-sm ${isSaved ? 'btn-primary' : ''}" onclick="toggleSave(event,this,'${article.id}',${JSON.stringify(article).replace(/"/g,'&quot;').replace(/'/g,"\\'")})" title="Save">
+              🔖 ${isSaved ? 'Saved' : 'Save'}
+            </button>
+            <button class="btn btn-sm" onclick="openComments('${article.id}')">💬 Discuss</button>
+            <button class="btn btn-sm btn-primary" onclick="window.open('${escHtml(article.url)}','_blank')">Read →</button>
           </div>
-          <div class="comment-text">${escHtml(r.content)}</div>
-        </div>`).join('')}
+        </div>
+      </div>
     </div>`;
-  return div;
 }
 
-async function postComment(articleId) {
-  const input = document.getElementById('comment-input');
-  const content = input.value.trim();
-  if (!content) return;
+// ======= CARD =======
+function createCard(article, index = 0) {
+  const card = document.createElement('div');
+  card.className = 'news-card';
+  card.style.animationDelay = `${0.05 + index * 0.05}s`;
+  card.dataset.id = article.id;
+
+  const isSaved = savedIds.includes(article.id);
+  const pubDate = article.publishedAt
+    ? new Date(article.publishedAt).toLocaleDateString(undefined, { month:'short', day:'numeric' })
+    : '';
+  const source = article.source?.name || '';
+
+  const imgSrc = article.urlToImage
+    ? `/news/imgproxy?url=${encodeURIComponent(article.urlToImage)}`
+    : null;
+
+  card.innerHTML = `
+    <div class="card-img-wrap">
+      ${imgSrc
+        ? `<img class="card-img" src="${escHtml(imgSrc)}" alt="" loading="lazy"
+             onerror="this.closest('.card-img-wrap').innerHTML='<div class=\\'card-img-placeholder\\'>📰<div class=\\'card-img-src\\'>${escHtml(source)}</div></div>'" />`
+        : `<div class="card-img-placeholder">📰<div class="card-img-src">${escHtml(source)}</div></div>`}
+      ${imgSrc ? `<div class="card-img-overlay"></div><div class="card-img-src">${escHtml(source)}</div>` : ''}
+    </div>
+    <div class="card-body">
+      <a class="card-title" href="${escHtml(article.url)}" target="_blank" rel="noopener"
+         onclick="event.stopPropagation()">${escHtml(article.title || '')}</a>
+      ${article.description
+        ? `<p class="card-desc" data-orig="${escAttr(article.description)}">${escHtml(article.description)}</p>
+           <div class="card-translate">
+             <button class="translate-btn" onclick="translateDesc(this,'${escAttr(article.description)}')">🌐 Translate</button>
+           </div>` : ''}
+      <div class="card-footer">
+        <span class="card-date">${pubDate}</span>
+        <div class="card-actions">
+          <button class="icon-btn ${isSaved ? 'saved' : ''}" title="${isSaved ? 'Saved' : 'Save article'}"
+            onclick="toggleSave(event,this,'${article.id}',${JSON.stringify(article).replace(/"/g,'&quot;').replace(/'/g,"\\'")})">
+            🔖
+          </button>
+          <button class="icon-btn" title="Comments" onclick="openComments('${article.id}')">
+            💬 Discuss
+          </button>
+          <a class="icon-btn" href="${escHtml(article.url)}" target="_blank" rel="noopener" title="Open article">↗</a>
+        </div>
+      </div>
+    </div>`;
+  return card;
+}
+
+// ======= SEARCH =======
+async function doSearch() {
+  const q = document.getElementById('searchInput')?.value.trim();
+  if (!q) return;
+  document.getElementById('heroSlot').innerHTML = '';
+  const titleEl = document.getElementById('sectionTitle');
+  if (titleEl) titleEl.textContent = `Results for "${q}"`;
+  showSkeletons();
+  document.getElementById('loadMoreBtn').style.display = 'none';
+
   try {
-    const r = await fetch(`/comments/api/comments/${articleId}`, {
+    const resp = await fetch(`/news/search?q=${encodeURIComponent(q)}`);
+    const data = await resp.json();
+    const grid = document.getElementById('newsGrid');
+    grid.innerHTML = '';
+    if (!data.articles?.length) {
+      grid.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🔎</div>
+        <div class="empty-state-title">No results for "${escHtml(q)}"</div></div>`;
+      return;
+    }
+    data.articles.forEach((a, i) => grid.appendChild(createCard(a, i)));
+  } catch {
+    showToast('Search failed', 'error');
+  }
+}
+
+// ======= TRANSLATE =======
+async function translateDesc(btn, text) {
+  if (!text) return;
+  const orig = btn.textContent;
+  btn.textContent = '⏳';
+  btn.disabled = true;
+  try {
+    const resp = await fetch('/translate', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({content})
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, target: currentLang })
     });
-    if (r.ok) {
-      input.value = '';
-      loadComments(articleId);
-      showToast('Comment posted!');
+    const data = await resp.json();
+    const descEl = btn.closest('.card-body')?.querySelector('.card-desc');
+    if (descEl && data.translated) {
+      descEl.textContent = data.translated;
+      btn.textContent = '↩ Original';
+      btn.disabled = false;
+      btn.onclick = () => {
+        descEl.textContent = text;
+        btn.textContent = '🌐 Translate';
+        btn.onclick = () => translateDesc(btn, text);
+      };
+      return;
     }
   } catch {}
+  btn.textContent = orig;
+  btn.disabled = false;
+  showToast('Translation unavailable', 'error');
 }
 
-function showReplyForm(commentId, articleId) {
-  const wrap = document.getElementById(`reply-form-${commentId}`);
-  if (wrap.innerHTML) { wrap.innerHTML = ''; return; }
-  wrap.innerHTML = `
-    <div class="comment-form" style="margin-left:28px;margin-top:8px">
-      <textarea id="reply-input-${commentId}" placeholder="Write a reply..." style="min-height:60px"></textarea>
-      <button class="comment-submit" style="font-size:11px;padding:6px 14px" onclick="postReply(${commentId},'${articleId}')">Reply</button>
-    </div>`;
-}
-
-async function postReply(parentId, articleId) {
-  const input = document.getElementById(`reply-input-${parentId}`);
-  const content = input.value.trim();
-  if (!content) return;
+// ======= SAVE =======
+async function toggleSave(event, btn, articleId, article) {
+  event.preventDefault(); event.stopPropagation();
   try {
-    const r = await fetch(`/comments/api/comments/${articleId}`, {
+    const parsed = typeof article === 'string' ? JSON.parse(article) : article;
+    const resp = await fetch('/news/save', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({content, parent_id: parentId})
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        article_id: articleId,
+        title: parsed.title, url: parsed.url,
+        image: parsed.urlToImage, source: parsed.source?.name
+      })
     });
-    if (r.ok) { loadComments(articleId); showToast('Reply posted!'); }
-  } catch {}
-}
-
-async function likeComment(commentId) {
-  if (!isLoggedIn) { openModal('login'); return; }
-  try {
-    const r = await fetch(`/comments/api/comments/${commentId}/like`, {method:'POST'});
-    const d = await r.json();
-    const btn = document.getElementById(`like-btn-${commentId}`);
-    const count = document.getElementById(`like-count-${commentId}`);
-    if (btn) btn.className = `comment-action ${d.liked ? 'liked' : ''}`;
-    if (count) count.textContent = d.likes;
-  } catch {}
-}
-
-// AUTH MODAL
-function openModal(mode) {
-  document.getElementById('modal-overlay').classList.add('open');
-  switchTab(mode);
-  document.body.style.overflow = 'hidden';
-}
-
-function closeModal() {
-  document.getElementById('modal-overlay').classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-function switchTab(tab) {
-  document.getElementById('form-login').style.display = tab === 'login' ? 'block' : 'none';
-  document.getElementById('form-register').style.display = tab === 'register' ? 'block' : 'none';
-  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
-  document.getElementById('tab-register').classList.toggle('active', tab === 'register');
-}
-
-async function submitAuth(e, type) {
-  e.preventDefault();
-  const form = e.target;
-  const data = {};
-  new FormData(form).forEach((v, k) => data[k] = v);
-  const errEl = document.getElementById(`${type}-error`);
-  errEl.textContent = '';
-
-  try {
-    const r = await fetch(`/auth/${type}`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify(data)
-    });
-    const d = await r.json();
-    if (d.success) {
-      closeModal();
-      showToast(`Welcome, ${d.username}!`);
-      setTimeout(() => location.reload(), 800);
+    if (resp.status === 401) { openModal('loginModal'); return; }
+    const data = await resp.json();
+    if (data.saved) {
+      btn.classList.add('saved');
+      if (!savedIds.includes(articleId)) savedIds.push(articleId);
+      showToast('Article saved!', 'success');
     } else {
-      errEl.textContent = d.error || 'Something went wrong.';
+      btn.classList.remove('saved');
+      savedIds = savedIds.filter(id => id !== articleId);
+      showToast('Removed from saved');
+    }
+    localStorage.setItem('omni_saved', JSON.stringify(savedIds));
+  } catch { showToast('Failed to save', 'error'); }
+}
+
+// ======= COMMENTS =======
+function openComments(articleId) {
+  currentArticleId = articleId;
+  const panel = document.getElementById('commentsPanel');
+  panel.classList.remove('hidden');
+  const iw = document.getElementById('commentInputWrap');
+  if (iw) iw.style.display = 'flex';
+  loadComments(articleId);
+}
+function closeComments() {
+  document.getElementById('commentsPanel').classList.add('hidden');
+  currentArticleId = null;
+}
+async function loadComments(articleId) {
+  const body = document.getElementById('commentsBody');
+  body.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text3)">Loading...</div>';
+  try {
+    const resp = await fetch(`/comments/${articleId}`);
+    const data = await resp.json();
+    body.innerHTML = '';
+    if (!data.comments?.length) {
+      body.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text3)">No comments yet.<br>Be the first to share your thoughts!</div>';
+      return;
+    }
+    data.comments.forEach(c => body.appendChild(createCommentEl(c)));
+  } catch {
+    body.innerHTML = '<div style="text-align:center;padding:32px;color:var(--red)">Failed to load comments.</div>';
+  }
+}
+function createCommentEl(c) {
+  const el = document.createElement('div');
+  el.className = 'comment-item';
+  el.innerHTML = `
+    <div class="comment-author">👤 ${escHtml(c.author)}</div>
+    <div class="comment-content">${escHtml(c.content)}</div>
+    <div class="comment-footer">
+      <span class="comment-date">${new Date(c.created_at).toLocaleDateString()}</span>
+      <button class="like-btn ${c.liked?'liked':''}" onclick="likeComment(this,${c.id})">❤ ${c.like_count}</button>
+      <button class="icon-btn" style="font-size:11px" onclick="replyTo(${c.id})">↩ Reply</button>
+    </div>
+    ${c.replies?.length ? `<div class="replies">${c.replies.map(r=>`
+      <div class="comment-item">
+        <div class="comment-author">👤 ${escHtml(r.author)}</div>
+        <div class="comment-content">${escHtml(r.content)}</div>
+        <div class="comment-date" style="font-size:11px;color:var(--text3)">${new Date(r.created_at).toLocaleDateString()}</div>
+      </div>`).join('')}</div>` : ''}`;
+  return el;
+}
+async function submitComment() {
+  const input = document.getElementById('commentInput');
+  const content = input?.value.trim();
+  if (!content || !currentArticleId) return;
+  try {
+    const resp = await fetch('/comments/add', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ article_id: currentArticleId, content })
+    });
+    if (resp.status === 401) { openModal('loginModal'); return; }
+    const data = await resp.json();
+    if (data.success) {
+      input.value = '';
+      loadComments(currentArticleId);
+      showToast('Comment posted!', 'success');
+    }
+  } catch { showToast('Failed to post comment', 'error'); }
+}
+async function likeComment(btn, commentId) {
+  try {
+    const resp = await fetch(`/comments/like/${commentId}`, { method: 'POST' });
+    if (resp.status === 401) { openModal('loginModal'); return; }
+    const data = await resp.json();
+    btn.className = `like-btn ${data.liked?'liked':''}`;
+    btn.textContent = `❤ ${data.like_count}`;
+  } catch {}
+}
+let replyParentId = null;
+function replyTo(parentId) {
+  replyParentId = parentId;
+  const input = document.getElementById('commentInput');
+  if (input) { input.placeholder = `Replying to #${parentId}...`; input.focus(); }
+}
+
+// ======= AUTH =======
+async function doLogin() {
+  const email    = document.getElementById('loginEmail')?.value;
+  const password = document.getElementById('loginPassword')?.value;
+  const errEl    = document.getElementById('loginError');
+  errEl?.classList.add('hidden');
+  try {
+    const resp = await fetch('/auth/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await resp.json();
+    if (data.success) {
+      showToast(`Welcome back, ${data.username}! 👋`, 'success');
+      setTimeout(() => location.reload(), 900);
+    } else {
+      if (errEl) { errEl.textContent = data.error || 'Login failed'; errEl.classList.remove('hidden'); }
     }
   } catch {
-    errEl.textContent = 'Network error. Please try again.';
+    if (errEl) { errEl.textContent = 'Network error. Please try again.'; errEl.classList.remove('hidden'); }
   }
 }
-
-function toggleUserMenu() {
-  document.getElementById('user-dropdown').classList.toggle('open');
-}
-
-// TRANSLATION
-async function setLang(lang) {
-  currentLang = lang;
-  if (lang === 'en') { loadNews(currentCat); return; }
-  const headlines = document.querySelectorAll('.news-card h3');
-  for (const el of headlines) {
-    const original = el.dataset.original || el.textContent;
-    el.dataset.original = original;
-    try {
-      const r = await fetch('/api/translate', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({text: original, target: lang})
-      });
-      const d = await r.json();
-      if (d.translated) el.textContent = d.translated;
-    } catch {}
-  }
-}
-
-// PWA
-function initPWA() {
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    document.getElementById('pwa-btn').style.display = 'block';
-    setTimeout(() => { document.getElementById('pwa-banner').style.display = 'flex'; }, 3000);
-  });
-  window.addEventListener('appinstalled', () => {
-    document.getElementById('pwa-banner').style.display = 'none';
-    showToast('OmniNexus installed!');
-  });
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/static/sw.js').catch(() => {});
-  }
-}
-
-function installPWA() {
-  if (deferredPrompt) {
-    deferredPrompt.prompt();
-    deferredPrompt.userChoice.then(r => {
-      if (r.outcome === 'accepted') showToast('Installing OmniNexus...');
-      deferredPrompt = null;
+async function doRegister() {
+  const username = document.getElementById('regUsername')?.value;
+  const email    = document.getElementById('regEmail')?.value;
+  const password = document.getElementById('regPassword')?.value;
+  const errEl    = document.getElementById('registerError');
+  errEl?.classList.add('hidden');
+  try {
+    const resp = await fetch('/auth/register', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, email, password })
     });
-  } else {
-    showToast('Open in browser and tap "Add to Home Screen"');
+    const data = await resp.json();
+    if (data.success) {
+      showToast(`Welcome to OmniNexus, ${data.username}! 🎉`, 'success');
+      setTimeout(() => location.reload(), 900);
+    } else {
+      if (errEl) { errEl.textContent = data.error || 'Registration failed'; errEl.classList.remove('hidden'); }
+    }
+  } catch {
+    if (errEl) { errEl.textContent = 'Network error. Please try again.'; errEl.classList.remove('hidden'); }
   }
 }
 
-// UTILS
-function toggleMenu() {
-  document.getElementById('nav-links').classList.toggle('open');
+// ======= MODALS =======
+function openModal(id) {
+  document.getElementById(id)?.classList.remove('hidden');
 }
+function closeModal(id) {
+  document.getElementById(id)?.classList.add('hidden');
+}
+function switchModal(from, to) { closeModal(from); openModal(to); }
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    ['loginModal','registerModal'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
+    closeComments();
+  }
+});
 
-function showToast(msg) {
+// ======= TOAST =======
+let toastTimer;
+function showToast(msg, type = '') {
   const t = document.getElementById('toast');
   t.textContent = msg;
-  t.style.display = 'block';
-  setTimeout(() => { t.style.display = 'none'; }, 3000);
+  t.className = `toast${type ? ' ' + type : ''}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.add('hidden'), 3200);
 }
 
-function escHtml(str) {
-  if (!str) return '';
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+// ======= UTILS =======
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-
-function formatTime(iso) {
-  if (!iso) return '';
-  const diff = (Date.now() - new Date(iso)) / 1000;
-  if (diff < 3600) return Math.floor(diff/60) + 'm ago';
-  if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
-  return Math.floor(diff/86400) + 'd ago';
+function escAttr(s) {
+  return String(s||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
