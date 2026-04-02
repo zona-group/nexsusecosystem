@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Admin Panel — OmniNexus</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',Arial,sans-serif;background:#080c14;color:#e2e8f0;min-height:100vh}
+    .topbar{background:#0f172a;border-bottom:1px solid #1e293b;padding:12px 24px;display:flex;align-items:center;justify-content:space-between}
+    .topbar h1{font-size:1.1rem;color:#818cf8;font-weight:700}
+    .topbar a{color:#64748b;text-decoration:none;font-size:0.85rem;margin-left:16px}
+    .topbar a:hover{color:#818cf8}
+    .container{max-width:1100px;margin:0 auto;padding:24px 16px}
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:32px}
+    .stat-card{background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:20px;text-align:center}
+    .stat-card .num{font-size:2rem;font-weight:800;background:linear-gradient(135deg,#6366f1,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .stat-card .lbl{font-size:0.78rem;color:#64748b;margin-top:4px}
+    .card{background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:20px;margin-bottom:20px}
+    .card h2{font-size:1rem;color:#c7d2fe;margin-bottom:16px;border-bottom:1px solid #1e293b;padding-bottom:10px}
+    table{width:100%;border-collapse:collapse;font-size:0.85rem}
+    th{text-align:left;padding:8px 12px;color:#64748b;font-weight:600;border-bottom:1px solid #1e293b}
+    td{padding:8px 12px;border-bottom:1px solid #111827}
+    tr:hover td{background:#111827}
+    .badge{display:inline-block;padding:2px 8px;border-radius:9999px;font-size:0.72rem;font-weight:600}
+    .badge.admin{background:#4c1d95;color:#c4b5fd}
+    .badge.user{background:#0c4a6e;color:#7dd3fc}
+    .badge.active{background:#064e3b;color:#6ee7b7}
+    .badge.inactive{background:#7f1d1d;color:#fca5a5}
+    .btn{padding:6px 14px;border:none;border-radius:6px;cursor:pointer;font-size:0.8rem;font-weight:600;transition:opacity .2s}
+    .btn:hover{opacity:.8}
+    .btn-primary{background:#6366f1;color:white}
+    .btn-danger{background:#ef4444;color:white}
+    .btn-success{background:#10b981;color:white}
+    .btn-warn{background:#f59e0b;color:white}
+    .notify-form{display:grid;gap:12px}
+    .notify-form input,.notify-form textarea{background:#1e293b;border:1px solid #334155;border-radius:8px;padding:10px 14px;color:#e2e8f0;font-size:0.9rem;width:100%}
+    .notify-form textarea{height:80px;resize:vertical}
+    .toast{position:fixed;bottom:24px;right:24px;background:#1e293b;border:1px solid #334155;border-radius:10px;padding:14px 20px;color:#e2e8f0;font-size:0.9rem;z-index:9999;display:none;max-width:340px}
+    .toast.show{display:block}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <h1>⚡ OmniNexus Admin</h1>
+  <div>
+    <a href="/">← Siteye Dön</a>
+    <a href="/admin/users">Kullanıcılar</a>
+    <a href="/auth/logout">Çıkış</a>
+  </div>
+</div>
+
+<div class="container">
+  <div class="stats-grid">
+    <div class="stat-card"><div class="num">{{total_users}}</div><div class="lbl">Toplam Üye</div></div>
+    <div class="stat-card"><div class="num">{{active_users}}</div><div class="lbl">Aktif Üye</div></div>
+    <div class="stat-card"><div class="num">{{pending_users}}</div><div class="lbl">Bekleyen Onay</div></div>
+    <div class="stat-card"><div class="num">{{admin_users}}</div><div class="lbl">Admin</div></div>
+    <div class="stat-card"><div class="num">{{total_comments}}</div><div class="lbl">Yorum</div></div>
+    <div class="stat-card"><div class="num">{{push_subs}}</div><div class="lbl">Push Abonesi</div></div>
+  </div>
+
+  <div class="card">
+    <h2>📢 Push Bildirim Gönder</h2>
+    <div class="notify-form">
+      <input type="text" id="n-title" placeholder="Başlık (ör: 🔴 Son Dakika)" value="OmniNexus"/>
+      <textarea id="n-body" placeholder="Bildirim metni..."></textarea>
+      <input type="text" id="n-url" placeholder="Link (ör: /)" value="/"/>
+      <div style="display:flex;gap:10px;align-items:center">
+        <button class="btn btn-primary" onclick="sendNotification()">Tüm Abonelere Gönder</button>
+        <button class="btn btn-warn" onclick="mailTest()">Mail Test</button>
+        <span id="notify-result" style="color:#6ee7b7;font-size:0.85rem"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>👥 Son Kayıt Olanlar <a href="/admin/users" style="font-size:0.8rem;color:#818cf8;margin-left:8px">Tümünü Gör →</a></h2>
+    <table>
+      <thead><tr><th>ID</th><th>Kullanıcı</th><th>E-posta</th><th>Rol</th><th>Durum</th><th>Kayıt</th><th>İşlem</th></tr></thead>
+      <tbody>
+      {% for u in recent_users %}
+      <tr id="row-{{u.id}}">
+        <td>#{{u.id}}</td>
+        <td>{{u.username}}</td>
+        <td style="color:#64748b">{{u.email}}</td>
+        <td><span class="badge {{u.role}}" id="role-{{u.id}}">{{u.role}}</span></td>
+        <td><span class="badge {{'active' if u.is_active else 'inactive'}}" id="status-{{u.id}}">{{'Aktif' if u.is_active else 'Bekliyor'}}</span></td>
+        <td style="color:#64748b;font-size:0.78rem">{{u.created_at.strftime('%d.%m.%Y')}}</td>
+        <td style="display:flex;gap:6px;flex-wrap:wrap">
+          {% if not u.is_active %}
+          <button class="btn btn-success" onclick="activateUser({{u.id}})">Onayla</button>
+          {% endif %}
+          {% if u.id != current_user.id %}
+          <button class="btn btn-warn" onclick="toggleRole({{u.id}}, '{{u.role}}')">
+            {{'→User' if u.is_admin() else '→Admin'}}
+          </button>
+          <button class="btn btn-danger" onclick="toggleActive({{u.id}}, {{u.is_active|lower}})">
+            {{'Engelle' if u.is_active else 'Aktif Et'}}
+          </button>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+function showToast(msg, ok=true){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.style.borderColor=ok?'#10b981':'#ef4444';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+async function api(url, data){
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+  return r.json();
+}
+async function toggleRole(id, cur){
+  const role=cur==='admin'?'user':'admin';
+  const d=await api(`/admin/users/${id}/role`,{role});
+  if(d.success){
+    document.getElementById(`role-${id}`).textContent=d.role;
+    document.getElementById(`role-${id}`).className=`badge ${d.role}`;
+    showToast(`${d.username} rolü değiştirildi → ${d.role}`);
+  } else showToast(d.error,false);
+}
+async function toggleActive(id, cur){
+  const d=await api(`/admin/users/${id}/toggle-active`,{});
+  if(d.success){
+    const s=document.getElementById(`status-${id}`);
+    s.textContent=d.is_active?'Aktif':'Pasif';
+    s.className=`badge ${d.is_active?'active':'inactive'}`;
+    showToast(d.message);
+  } else showToast(d.error,false);
+}
+async function activateUser(id){
+  const d=await api(`/admin/users/${id}/activate`,{});
+  if(d.success){
+    const s=document.getElementById(`status-${id}`);
+    if(s){s.textContent='Aktif';s.className='badge active';}
+    showToast(d.message);
+  } else showToast(d.error,false);
+}
+async function sendNotification(){
+  const title=document.getElementById('n-title').value;
+  const body=document.getElementById('n-body').value;
+  const url=document.getElementById('n-url').value;
+  if(!body){showToast('Bildirim metni girin!',false);return;}
+  const d=await api('/admin/notify',{title,body,url});
+  document.getElementById('notify-result').textContent=d.message||d.error;
+  showToast(d.message||d.error, d.success);
+}
+async function mailTest(){
+  const d=await api('/admin/mail-test',{});
+  showToast(d.message||d.error, d.success);
+}
+</script>
+</body>
+</html>
