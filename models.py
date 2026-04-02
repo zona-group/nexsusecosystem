@@ -59,6 +59,9 @@ class Comment(db.Model):
     def like_count(self):
         return self.likes.count()
 
+    def __repr__(self):
+        return f'<Comment {self.id} by {self.user_id}>'
+
 
 class CommentLike(db.Model):
     __tablename__ = 'comment_likes'
@@ -86,7 +89,7 @@ class PushSubscription(db.Model):
     __tablename__ = 'push_subscriptions'
     id         = db.Column(db.Integer, primary_key=True)
     user_id    = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    endpoint   = db.Column(db.Text, nullable=False, unique=True)
-    p256dh     = db.Column(db.Text, nullable=False)
+    endpoint   = db.Column(db.String(512), nullable=False, unique=True)
+    p256dh     = db.Column(db.String(256), nullable=False)
     auth       = db.Column(db.String(256), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
