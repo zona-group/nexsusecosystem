@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Kullanıcılar — Admin</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',Arial,sans-serif;background:#080c14;color:#e2e8f0;min-height:100vh}
+    .topbar{background:#0f172a;border-bottom:1px solid #1e293b;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .topbar h1{font-size:1.1rem;color:#818cf8;font-weight:700}
+    .topbar a{color:#64748b;text-decoration:none;font-size:0.85rem;margin-left:12px}
+    .topbar a:hover{color:#818cf8}
+    .container{max-width:1200px;margin:0 auto;padding:24px 16px}
+    .search-bar{display:flex;gap:10px;margin-bottom:20px}
+    .search-bar input{flex:1;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:10px 14px;color:#e2e8f0;font-size:0.9rem}
+    .search-bar button{background:#6366f1;color:white;border:none;border-radius:8px;padding:10px 20px;cursor:pointer;font-weight:600}
+    table{width:100%;border-collapse:collapse;font-size:0.85rem;background:#0f172a;border-radius:12px;overflow:hidden;border:1px solid #1e293b}
+    th{text-align:left;padding:10px 14px;color:#64748b;background:#111827;font-weight:600}
+    td{padding:10px 14px;border-bottom:1px solid #111827}
+    tr:hover td{background:#0d1424}
+    .badge{display:inline-block;padding:2px 8px;border-radius:9999px;font-size:0.72rem;font-weight:600}
+    .badge.admin{background:#4c1d95;color:#c4b5fd}
+    .badge.user{background:#0c4a6e;color:#7dd3fc}
+    .badge.active{background:#064e3b;color:#6ee7b7}
+    .badge.inactive{background:#7f1d1d;color:#fca5a5}
+    .btn{padding:5px 12px;border:none;border-radius:6px;cursor:pointer;font-size:0.78rem;font-weight:600}
+    .btn-success{background:#10b981;color:white}
+    .btn-warn{background:#f59e0b;color:white}
+    .btn-danger{background:#ef4444;color:white}
+    .pagination{display:flex;gap:8px;margin-top:20px;flex-wrap:wrap}
+    .pagination a{color:#818cf8;text-decoration:none;padding:6px 12px;border:1px solid #334155;border-radius:6px;font-size:0.82rem}
+    .pagination a:hover,.pagination a.current{background:#1e293b}
+    .toast{position:fixed;bottom:24px;right:24px;background:#1e293b;border:1px solid #334155;border-radius:10px;padding:14px 20px;color:#e2e8f0;font-size:0.9rem;z-index:9999;display:none;max-width:340px}
+    .toast.show{display:block}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <h1>👥 Kullanıcı Yönetimi</h1>
+  <div><a href="/admin">← Dashboard</a><a href="/">Siteye Dön</a></div>
+</div>
+<div class="container">
+  <form class="search-bar" method="GET">
+    <input name="q" placeholder="Kullanıcı adı veya e-posta ara..." value="{{q}}"/>
+    <button type="submit">Ara</button>
+  </form>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th><th>Kullanıcı</th><th>E-posta</th><th>Rol</th>
+        <th>Durum</th><th>Doğrulama</th><th>Kayıt</th><th>İşlemler</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for u in users_page.items %}
+    <tr id="row-{{u.id}}">
+      <td>#{{u.id}}</td>
+      <td><strong>{{u.username}}</strong></td>
+      <td style="color:#64748b">{{u.email}}</td>
+      <td><span class="badge {{u.role}}" id="role-{{u.id}}">{{u.role}}</span></td>
+      <td><span class="badge {{'active' if u.is_active else 'inactive'}}" id="status-{{u.id}}">{{'Aktif' if u.is_active else 'Bekliyor'}}</span></td>
+      <td><span style="color:{{'#6ee7b7' if u.email_verified else '#fca5a5'}}">{{'&#10003;' if u.email_verified else '&#10007;'}}</span></td>
+      <td style="color:#64748b;font-size:0.78rem">{{u.created_at.strftime('%d.%m.%Y %H:%M')}}</td>
+      <td style="display:flex;gap:5px;flex-wrap:wrap">
+        {% if not u.is_active %}
+        <button class="btn btn-success" onclick="activateUser({{u.id}})">Onayla</button>
+        {% endif %}
+        {% if u.id != current_user.id %}
+        <button class="btn btn-warn" onclick="toggleRole({{u.id}},'{{u.role}}')">
+          {{'->User' if u.is_admin() else '->Admin'}}
+        </button>
+        <button class="btn btn-danger" onclick="toggleActive({{u.id}},{{u.is_active|lower}})">
+          {{'Engelle' if u.is_active else 'Aktif Et'}}
+        </button>
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="8" style="text-align:center;color:#64748b;padding:24px">Kullanıcı bulunamadı.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="pagination">
+    {% if users_page.has_prev %}
+    <a href="?page={{users_page.prev_num}}&q={{q}}">‹ Önceki</a>
+    {% endif %}
+    {% for p in users_page.iter_pages(left_edge=1,right_edge=1,left_current=2,right_current=2) %}
+      {% if p %}
+        <a href="?page={{p}}&q={{q}}" {{'class="current"' if p==users_page.page}}>{{p}}</a>
+      {% else %}
+        <span style="color:#334155;padding:6px">…</span>
+      {% endif %}
+    {% endfor %}
+    {% if users_page.has_next %}
+    <a href="?page={{users_page.next_num}}&q={{q}}">Sonraki ›</a>
+    {% endif %}
+    <span style="color:#64748b;font-size:0.82rem;margin-left:8px">
+      Toplam {{users_page.total}} kullanıcı
+    </span>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+function showToast(msg,ok=true){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.style.borderColor=ok?'#10b981':'#ef4444';
+  t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3500);
+}
+async function api(url,data){
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+  return r.json();
+}
+async function toggleRole(id,cur){
+  const role=cur==='admin'?'user':'admin';
+  const d=await api(`/admin/users/${id}/role`,{role});
+  if(d.success){
+    const el=document.getElementById(`role-${id}`);
+    el.textContent=d.role;el.className=`badge ${d.role}`;
+    showToast(`${d.username} → ${d.role}`);
+  }else showToast(d.error,false);
+}
+async function toggleActive(id,cur){
+  const d=await api(`/admin/users/${id}/toggle-active`,{});
+  if(d.success){
+    const s=document.getElementById(`status-${id}`);
+    s.textContent=d.is_active?'Aktif':'Pasif';s.className=`badge ${d.is_active?'active':'inactive'}`;
+    showToast(d.message);
+  }else showToast(d.error,false);
+}
+async function activateUser(id){
+  const d=await api(`/admin/users/${id}/activate`,{});
+  if(d.success){
+    const s=document.getElementById(`status-${id}`);
+    if(s){s.textContent='Aktif';s.className='badge active';}
+    showToast(d.message);
+  }else showToast(d.error,false);
+}
+</script>
+</body>
+</html>
