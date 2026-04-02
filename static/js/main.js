@@ -439,12 +439,50 @@ async function doRegister() {
 
 // ======= MODALS =======
 function openModal(id) {
+  const overlay = document.getElementById('modal-overlay');
+  if (overlay) { overlay.style.display = 'flex'; switchTab(id); return; }
   document.getElementById(id)?.classList.remove('hidden');
 }
 function closeModal(id) {
-  document.getElementById(id)?.classList.add('hidden');
+  const overlay = document.getElementById('modal-overlay');
+  if (overlay) { overlay.style.display = 'none'; return; }
+  if (id) document.getElementById(id)?.classList.add('hidden');
 }
 function switchModal(from, to) { closeModal(from); openModal(to); }
+function switchTab(tab) {
+  const lf = document.getElementById('form-login');
+  const rf = document.getElementById('form-register');
+  const tl = document.getElementById('tab-login');
+  const tr = document.getElementById('tab-register');
+  if (lf) lf.style.display = tab === 'login'    ? '' : 'none';
+  if (rf) rf.style.display = tab === 'register' ? '' : 'none';
+  if (tl) tl.classList.toggle('active', tab === 'login');
+  if (tr) tr.classList.toggle('active', tab === 'register');
+}
+async function submitAuth(event, type) {
+  event.preventDefault();
+  const form  = document.getElementById('form-' + type);
+  const data  = Object.fromEntries(new FormData(form));
+  const errEl = document.getElementById(type + '-error');
+  if (errEl) errEl.textContent = '';
+  try {
+    const resp = await fetch('/auth/' + type, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    const result = await resp.json();
+    if (result.success) {
+      showToast(type === 'login' ? 'Welcome back, ' + result.username + '!' : 'Welcome to OmniNexus, ' + result.username + '!', 'success');
+      closeModal();
+      setTimeout(() => location.reload(), 900);
+    } else {
+      if (errEl) errEl.textContent = result.error || (type === 'login' ? 'Login failed' : 'Registration failed');
+    }
+  } catch {
+    if (errEl) errEl.textContent = 'Network error. Please try again.';
+  }
+}
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     ['loginModal','registerModal'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
